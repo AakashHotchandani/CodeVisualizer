@@ -3,11 +3,6 @@
   "private": true,
   "version": "0.0.0",
   "type": "module",
-  "homepage": "https://aakashhotchandani.github.io/CodeVisualizer",
-  "scripts": {me": "codevisualizer",
-  "private": true,
-  "version": "0.0.0",
-  "type": "module",
   "homepage": "https://AakashHotchandani.github.io/CodeVisualizer",
   "scripts": {
     "dev": "vite",
