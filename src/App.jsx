@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import Editor from '@monaco-editor/react';
 import Prism from 'prismjs';
 import 'prismjs/themes/prism-tomorrow.css';
 // Only import languages that don't have complex dependencies
@@ -12,6 +13,10 @@ function App() {
   const [codeData, setCodeData] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [editMode, setEditMode] = useState(false);
+  const [editedCode, setEditedCode] = useState('');
+  const [runOutput, setRunOutput] = useState('');
+  const [running, setRunning] = useState(false);
 
   useEffect(() => {
     console.log('App component mounted successfully!');
@@ -96,6 +101,75 @@ function App() {
     }
   };
 
+  const handleEditMode = () => {
+    if (!codeData) return;
+    setEditMode(true);
+    setEditedCode(codeData.source);
+    setRunOutput('');
+  };
+
+  const handleCancelEdit = () => {
+    setEditMode(false);
+    setEditedCode('');
+    setRunOutput('');
+  };
+
+  const getMonacoLanguage = (lang) => {
+    const langMap = {
+      'java': 'java',
+      'python': 'python',
+      'javascript': 'javascript',
+      'js': 'javascript',
+      'cpp': 'cpp',
+      'c': 'c'
+    };
+    return langMap[lang?.toLowerCase()] || 'plaintext';
+  };
+
+  const runCode = async () => {
+    if (!editedCode || !codeData) return;
+
+    setRunning(true);
+    setRunOutput('');
+    setError(null);
+
+    try {
+      // Using Piston API for code execution (supports multiple languages)
+      const response = await fetch('https://emkc.org/api/v2/piston/execute', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          language: codeData.lang === 'cpp' ? 'c++' : codeData.lang,
+          version: '*',
+          files: [{
+            content: editedCode
+          }],
+          stdin: codeData.input || ''
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to execute code');
+      }
+
+      const result = await response.json();
+      
+      if (result.run) {
+        const output = result.run.output || result.run.stdout || result.run.stderr || 'No output';
+        setRunOutput(output);
+      } else {
+        setRunOutput('Execution failed: ' + (result.message || 'Unknown error'));
+      }
+    } catch (err) {
+      setError('Failed to run code: ' + err.message);
+      setRunOutput('Error: ' + err.message);
+    } finally {
+      setRunning(false);
+    }
+  };
+
   return (
     <div className="app" style={{ minHeight: '100vh', background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)', padding: '2rem' }}>
       <div className="container" style={{ maxWidth: '1200px', margin: '0 auto', background: 'white', borderRadius: '16px', padding: '2rem' }}>
@@ -156,20 +230,115 @@ function App() {
             )}
 
             <div className="source-section">
-              <h3>Source Code</h3>
-              <div className="code-container">
-                <pre className="line-numbers">
-                  {codeData.source?.split('\n').map((_, i) => (
-                    <span key={i}>{i + 1}</span>
-                  ))}
-                </pre>
-                <pre className="code-content">
-                  <code 
-                    className={`language-${codeData.lang || 'java'}`}
-                    dangerouslySetInnerHTML={getHighlightedCode(codeData.source, codeData.lang)}
-                  />
-                </pre>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+                <h3 style={{ margin: 0 }}>Source Code</h3>
+                <div style={{ display: 'flex', gap: '0.5rem' }}>
+                  {!editMode ? (
+                    <button 
+                      onClick={handleEditMode}
+                      style={{ 
+                        padding: '0.5rem 1rem', 
+                        background: '#10b981', 
+                        color: 'white', 
+                        border: 'none', 
+                        borderRadius: '6px', 
+                        cursor: 'pointer',
+                        fontSize: '0.9rem',
+                        fontWeight: '600'
+                      }}
+                    >
+                      ✏️ Edit & Run
+                    </button>
+                  ) : (
+                    <>
+                      <button 
+                        onClick={runCode}
+                        disabled={running}
+                        style={{ 
+                          padding: '0.5rem 1rem', 
+                          background: running ? '#9ca3af' : '#10b981', 
+                          color: 'white', 
+                          border: 'none', 
+                          borderRadius: '6px', 
+                          cursor: running ? 'not-allowed' : 'pointer',
+                          fontSize: '0.9rem',
+                          fontWeight: '600'
+                        }}
+                      >
+                        {running ? '⏳ Running...' : '▶️ Run Code'}
+                      </button>
+                      <button 
+                        onClick={handleCancelEdit}
+                        style={{ 
+                          padding: '0.5rem 1rem', 
+                          background: '#ef4444', 
+                          color: 'white', 
+                          border: 'none', 
+                          borderRadius: '6px', 
+                          cursor: 'pointer',
+                          fontSize: '0.9rem',
+                          fontWeight: '600'
+                        }}
+                      >
+                        ✕ Cancel
+                      </button>
+                    </>
+                  )}
+                </div>
               </div>
+
+              {editMode ? (
+                <div>
+                  <div style={{ border: '2px solid #e2e8f0', borderRadius: '8px', overflow: 'hidden', marginBottom: '1rem' }}>
+                    <Editor
+                      height="400px"
+                      language={getMonacoLanguage(codeData.lang)}
+                      value={editedCode}
+                      onChange={(value) => setEditedCode(value || '')}
+                      theme="vs-dark"
+                      options={{
+                        minimap: { enabled: false },
+                        fontSize: 14,
+                        lineNumbers: 'on',
+                        scrollBeyondLastLine: false,
+                        automaticLayout: true,
+                      }}
+                    />
+                  </div>
+                  
+                  {runOutput && (
+                    <div style={{ marginTop: '1rem' }}>
+                      <h4 style={{ color: '#2d3748', marginBottom: '0.5rem' }}>Output:</h4>
+                      <pre style={{ 
+                        background: '#1a202c', 
+                        color: '#e2e8f0', 
+                        padding: '1rem', 
+                        borderRadius: '8px', 
+                        overflow: 'auto',
+                        maxHeight: '300px',
+                        fontSize: '0.9rem',
+                        lineHeight: '1.5'
+                      }}>
+                        {runOutput}
+                      </pre>
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <div className="code-container">
+                  <pre className="line-numbers">
+                    {codeData.source?.split('\n').map((_, i) => (
+                      <span key={i}>{i + 1}</span>
+                    ))}
+                  </pre>
+                  <pre className="code-content">
+                    <code 
+                      className={`language-${codeData.lang || 'java'}`}
+                      dangerouslySetInnerHTML={getHighlightedCode(codeData.source, codeData.lang)}
+                    />
+                  </pre>
+                </div>
+              )}
             </div>
           </div>
         )}
