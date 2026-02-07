@@ -30,8 +30,12 @@ function App() {
     setCodeData(null);
 
     try {
-      // Use proxy endpoint to avoid CORS issues
-      const response = await fetch(`/api/get-status/${codeId}`);
+      // Use proxy for local dev, direct URL for production
+      const apiUrl = import.meta.env.DEV 
+        ? `/api/get-status/${codeId}`
+        : `https://codejudge.geeksforgeeks.org/get-status/${codeId}`;
+      
+      const response = await fetch(apiUrl);
       
       if (!response.ok) {
         throw new Error('Failed to fetch code');
