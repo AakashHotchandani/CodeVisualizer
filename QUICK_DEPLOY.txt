@@ -1,0 +1,70 @@
+╔══════════════════════════════════════════════════════════════╗
+║         🚀 GEEKSFORGEEKS CODE VIEWER - QUICK DEPLOY         ║
+╚══════════════════════════════════════════════════════════════╝
+
+✅ YOUR PROJECT IS READY FOR GITHUB PAGES!
+
+═══════════════════════════════════════════════════════════════
+
+STEP 1: CREATE GITHUB REPO
+───────────────────────────
+→ Open: https://github.com/new
+→ Name: CodeVisualizer
+→ Visibility: PUBLIC ⚠️ (required for free GitHub Pages)
+→ Click: "Create repository"
+
+═══════════════════════════════════════════════════════════════
+
+STEP 2: UPDATE YOUR USERNAME
+─────────────────────────────
+Open: package.json
+Find line: "homepage": "https://yourusername.github.io/CodeVisualizer"
+Replace: yourusername → YOUR_ACTUAL_GITHUB_USERNAME
+
+═══════════════════════════════════════════════════════════════
+
+STEP 3: RUN THESE COMMANDS
+───────────────────────────
+(Replace YOUR_USERNAME with your GitHub username)
+
+cd /Users/aakashhotchandani/Downloads/Archive_NEW/CodeVisualizer
+
+git remote add origin https://github.com/YOUR_USERNAME/CodeVisualizer.git
+
+git push -u origin main
+
+npm run deploy
+
+═══════════════════════════════════════════════════════════════
+
+STEP 4: WAIT & ACCESS
+──────────────────────
+⏱  Wait 2-5 minutes for deployment
+🌐 Visit: https://YOUR_USERNAME.github.io/CodeVisualizer/
+
+═══════════════════════════════════════════════════════════════
+
+📝 WHAT'S BEEN CONFIGURED:
+──────────────────────────
+✅ Git repository initialized
+✅ gh-pages package installed  
+✅ Deployment scripts added to package.json
+✅ Vite base path configured
+✅ Production/dev environment handling
+✅ Automated deployment script (deploy.sh)
+✅ Complete deployment guide (DEPLOYMENT_GUIDE.md)
+
+═══════════════════════════════════════════════════════════════
+
+🔄 TO UPDATE AFTER CHANGES:
+───────────────────────────
+git add .
+git commit -m "Your changes"
+git push
+npm run deploy
+
+═══════════════════════════════════════════════════════════════
+
+Need help? Check DEPLOYMENT_GUIDE.md for detailed instructions!
+
+╚══════════════════════════════════════════════════════════════╝
