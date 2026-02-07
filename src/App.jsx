@@ -30,10 +30,12 @@ function App() {
     setCodeData(null);
 
     try {
-      // Use proxy for local dev, direct URL for production
+      // Use different URLs for dev and production
+      // In dev: use Vite proxy
+      // In production: use CORS proxy to bypass CORS restrictions
       const apiUrl = import.meta.env.DEV 
         ? `/api/get-status/${codeId}`
-        : `https://codejudge.geeksforgeeks.org/get-status/${codeId}`;
+        : `https://api.allorigins.win/raw?url=${encodeURIComponent(`https://codejudge.geeksforgeeks.org/get-status/${codeId}`)}`;
       
       const response = await fetch(apiUrl);
       
