@@ -37,20 +37,60 @@ function App() {
     try {
       // Use different URLs for dev and production
       // In dev: use Vite proxy
-      // In production: use CORS proxy to bypass CORS restrictions
-      const apiUrl = import.meta.env.DEV 
-        ? `/api/get-status/${codeId}`
-        : `https://api.allorigins.win/raw?url=${encodeURIComponent(`https://codejudge.geeksforgeeks.org/get-status/${codeId}`)}`;
+      // In production: try multiple CORS proxies with fallback
       
-      const response = await fetch(apiUrl);
+      let data = null;
       
-      if (!response.ok) {
-        throw new Error('Failed to fetch code');
-      }
+      if (import.meta.env.DEV) {
+        // Development: use Vite proxy
+        const response = await fetch(`/api/get-status/${codeId}`);
+        if (!response.ok) throw new Error('Failed to fetch code');
+        data = await response.json();
+      } else {
+        // Production: try multiple CORS proxies
+        const targetUrl = `https://codejudge.geeksforgeeks.org/get-status/${codeId}`;
+        
+        const proxies = [
+          // Try direct first (in case CORS is fixed)
+          targetUrl,
+          // Corsproxy.io - fast and reliable
+          `https://corsproxy.io/?${encodeURIComponent(targetUrl)}`,
+          // CORS Anywhere alternative
+          `https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(targetUrl)}`,
+          // AllOrigins as fallback
+          `https://api.allorigins.win/raw?url=${encodeURIComponent(targetUrl)}`
+        ];
 
-      const data = await response.json();
+        let lastError = null;
+        
+        for (const proxyUrl of proxies) {
+          try {
+            console.log(`Trying proxy: ${proxyUrl}`);
+            const response = await fetch(proxyUrl, {
+              signal: AbortSignal.timeout(10000) // 10 second timeout
+            });
+            
+            if (response.ok) {
+              data = await response.json();
+              console.log('Successfully fetched data');
+              break;
+            }
+          } catch (err) {
+            console.warn(`Proxy failed: ${err.message}`);
+            lastError = err;
+            continue;
+          }
+        }
+        
+        if (!data) {
+          throw new Error(lastError?.message || 'All proxy attempts failed. Please try again later.');
+        }
+      }
+      
       setCodeData(data);
+      setEditedCode(data.source || '');
     } catch (err) {
+      console.error('Fetch error:', err);
       setError(err.message || 'An error occurred while fetching the code');
     } finally {
       setLoading(false);
